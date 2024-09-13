@@ -7,17 +7,24 @@ import ImageLayer from 'ol/layer/Image';
 import ImageWMS from 'ol/source/ImageWMS';
 import { fromLonLat } from 'ol/proj';
 import { defaults as defaultControls } from 'ol/control';
+import Graticule from 'ol/layer/Graticule';
+import Stroke from 'ol/style/Stroke';
+import Text from 'ol/style/Text';
 
 const MapComponent = () => {
   const mapElement = useRef(null); // Ref for map DOM element
   const mapRef = useRef(null); // Ref for map instance
   const [currentLayerIndex, setCurrentLayerIndex] = useState(0); // State to hold the current WMS layer index
 
-  // List of WMS layers
+  // List of WMS layers, including your custom `untiled` layer
   const wmsLayers = [
-    { name: 'Land Use Land Cover 2005-06', url: 'https://bhuvan-vec2.nrsc.gov.in/bhuvan/wms', layer: 'lulc:BR_LULC50K_1112' },
-    { name: 'Land Use Land Cover 2011-12', url: 'https://bhuvan-vec2.nrsc.gov.in/bhuvan/wms', layer: 'lulc:BR_LULC50K_1112' },
-    { name: 'Urban Land Use: NUIS 2006-07', url: 'https://bhuvan-vec1.nrsc.gov.in/bhuvan/nuis/wms', layer: 'urban:nuis' }
+    { 
+      name: 'Custom Untiled Layer', 
+      url: 'http://localhost:8080/geoserver/example/wms', 
+      layer: 'example:output7', 
+      format: 'image/png', 
+      version: '1.1.1'
+    },
   ];
 
   useEffect(() => {
@@ -26,10 +33,20 @@ const MapComponent = () => {
       source: new OSM(),
     });
 
+    // Create Graticule (Grid) layer
+    const graticuleLayer = new Graticule({
+      strokeStyle: new Stroke({
+        color: 'rgba(255,120,0,0.9)', // Color of grid lines
+        width: 1, // Width of grid lines
+      }),
+      showLabels: true, // Show grid labels
+      wrapX: false, // Do not repeat grid lines horizontally
+    });
+
     // Initialize map
     const map = new Map({
       target: mapElement.current, // Target the div element with ref
-      layers: [osmLayer], // Start with base layer
+      layers: [osmLayer, graticuleLayer], // Add base layer and graticule
       view: new View({
         center: fromLonLat([78.9629, 20.5937]), // Center on India
         zoom: 5, // Adjust the zoom level as needed
@@ -62,6 +79,10 @@ const MapComponent = () => {
           url: layerDetails.url,
           params: {
             LAYERS: layerDetails.layer,
+            FORMAT: layerDetails.format || 'image/png',
+            VERSION: layerDetails.version || '1.1.1',
+            STYLES: '',
+            exceptions: 'application/vnd.ogc.se_inimage',
           },
           serverType: 'geoserver',
         }),
@@ -76,7 +97,7 @@ const MapComponent = () => {
     // Automatically cycle through WMS layers every 2 seconds
     const intervalId = setInterval(() => {
       setCurrentLayerIndex((prevIndex) => (prevIndex + 1) % wmsLayers.length);
-    }, 300);
+    }, 3000);
 
     // Cleanup interval on unmount
     return () => clearInterval(intervalId);
@@ -84,7 +105,6 @@ const MapComponent = () => {
 
   return (
     <div>
-      <h1 style={{ textAlign: 'center' }}>Auto-Switching WMS Layers</h1>
       <div
         ref={mapElement}
         style={{
