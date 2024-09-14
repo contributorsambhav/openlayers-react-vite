@@ -18,16 +18,20 @@ const MapComponent = () => {
   const [currentLayerIndex, setCurrentLayerIndex] = useState(0); // State to hold the current WMS layer index
   const [opacity, setOpacity] = useState(0.6); // State to hold the opacity of the current WMS layer
 
-  // List of WMS layers, including your custom `untiled` layer
-  const wmsLayers = [
-    { 
-      name: 'Custom Untiled Layer', 
-      url: 'http://localhost:8080/geoserver/example/wms', 
-      layer: 'example:output8', 
-      format: 'image/png', 
-      version: '1.1.1'
-    },
-  ];
+  const wmsLayers = [];
+
+  // Loop from 1 to 617 to create the WMS layer objects
+  for (let i = 1; i <= 617; i++) {
+    wmsLayers.push({
+      name: `Custom Untiled Layer ${i}`, // You can customize the name as per your requirement
+      url: 'http://localhost:8080/geoserver/example/wms', // Base URL
+      layer: `example:data${i}`, // Dynamic layer name with 'data' followed by the number
+      format: 'image/png', // Default format for WMS layers
+      version: '1.1.1', // WMS version
+    });
+  }
+  
+  
 
   useEffect(() => {
     // Create base map using OpenStreetMap layer
